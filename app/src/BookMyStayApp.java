@@ -1,84 +1,87 @@
-public class BookMyStayApp {
-    // Abstract class (Abstraction)
-    abstract class Room {
-        protected String roomType;
-        protected double price;
-        protected int availableRooms;
+import java.util.HashMap;
+import java.util.Map;
 
-        // Constructor
-        public Room(String roomType, double price, int availableRooms) {
-            this.roomType = roomType;
-            this.price = price;
-            this.availableRooms = availableRooms;
-        }
+// Room class (Basic structure)
+class Room {
+    private String roomType;
+    private double price;
 
-        // Abstract method
-        public abstract void displayDetails();
+    public Room(String roomType, double price) {
+        this.roomType = roomType;
+        this.price = price;
     }
 
-    // Single Room class (Inheritance)
-    class SingleRoom extends Room {
-
-        public SingleRoom(int availableRooms) {
-            super("Single Room", 1000, availableRooms);
-        }
-
-        @Override
-        public void displayDetails() {
-            System.out.println("Room Type: " + roomType);
-            System.out.println("Price: ₹" + price);
-            System.out.println("Available Rooms: " + availableRooms);
-            System.out.println("-----------------------------");
-        }
+    public String getRoomType() {
+        return roomType;
     }
 
-    // Double Room class
-    class DoubleRoom extends Room {
+    public double getPrice() {
+        return price;
+    }
+}
 
-        public DoubleRoom(int availableRooms) {
-            super("Double Room", 2000, availableRooms);
-        }
+// Centralized Inventory Management
+class RoomInventory {
+    private Map<String, Integer> inventory = new HashMap<>();
 
-        @Override
-        public void displayDetails() {
-            System.out.println("Room Type: " + roomType);
-            System.out.println("Price: ₹" + price);
-            System.out.println("Available Rooms: " + availableRooms);
-            System.out.println("-----------------------------");
+    // Add room type with availability
+    public void addRoom(String roomType, int count) {
+        inventory.put(roomType, count);
+    }
+
+    // Display all rooms
+    public void displayInventory() {
+        System.out.println("==== Room Inventory ====\n");
+        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+            System.out.println("Room Type: " + entry.getKey());
+            System.out.println("Available Rooms: " + entry.getValue());
+            System.out.println("-------------------------");
         }
     }
 
-    // Deluxe Room class
-    class DeluxeRoom extends Room {
-
-        public DeluxeRoom(int availableRooms) {
-            super("Deluxe Room", 3000, availableRooms);
-        }
-
-        @Override
-        public void displayDetails() {
-            System.out.println("Room Type: " + roomType);
-            System.out.println("Price: ₹" + price);
-            System.out.println("Available Rooms: " + availableRooms);
-            System.out.println("-----------------------------");
+    // Check availability
+    public void checkAvailability(String roomType) {
+        if (inventory.containsKey(roomType)) {
+            System.out.println(roomType + " Available: " + inventory.get(roomType));
+        } else {
+            System.out.println("Room type not found!");
         }
     }
 
-    // Main class
-
-        public static void main(String[] args) {
-
-            // Creating room objects (Static Availability)
-            Room single = new SingleRoom(5);
-            Room doubleRoom = new DoubleRoom(3);
-            Room deluxe = new DeluxeRoom(2);
-
-            // Display details
-            System.out.println("==== Available Room Types ====\n");
-
-            single.displayDetails();
-            doubleRoom.displayDetails();
-            deluxe.displayDetails();
+    // Book a room (reduce count)
+    public void bookRoom(String roomType) {
+        if (inventory.containsKey(roomType) && inventory.get(roomType) > 0) {
+            inventory.put(roomType, inventory.get(roomType) - 1);
+            System.out.println(roomType + " booked successfully!");
+        } else {
+            System.out.println("Room not available!");
         }
+    }
+}
 
+// Main class
+public class BookMyStayAppUC3 {
+
+    public static void main(String[] args) {
+
+        // Initialize inventory
+        RoomInventory inventory = new RoomInventory();
+
+        // Add room types
+        inventory.addRoom("Single Room", 5);
+        inventory.addRoom("Double Room", 3);
+        inventory.addRoom("Deluxe Room", 2);
+
+        // Display inventory
+        inventory.displayInventory();
+
+        // Check availability
+        inventory.checkAvailability("Single Room");
+
+        // Book a room
+        inventory.bookRoom("Single Room");
+
+        // Display updated inventory
+        inventory.displayInventory();
+    }
 }
