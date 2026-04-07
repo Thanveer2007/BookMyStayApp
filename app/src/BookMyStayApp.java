@@ -1,102 +1,118 @@
 import java.util.*;
 
-// Reservation class (Actor)
-class Reservation {
-    private String customerName;
+// Booking class
+class Booking {
+    private int bookingId;
+    private String guestName;
     private String roomType;
+    private double amount;
 
-    public Reservation(String customerName, String roomType) {
-        this.customerName = customerName;
+    public Booking(int bookingId, String guestName, String roomType, double amount) {
+        this.bookingId = bookingId;
+        this.guestName = guestName;
         this.roomType = roomType;
+        this.amount = amount;
     }
 
-    public String getCustomerName() {
-        return customerName;
+    public int getBookingId() {
+        return bookingId;
+    }
+
+    public String getGuestName() {
+        return guestName;
     }
 
     public String getRoomType() {
         return roomType;
     }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public void display() {
+        System.out.println("ID: " + bookingId +
+                ", Guest: " + guestName +
+                ", Room: " + roomType +
+                ", Amount: ₹" + amount);
+    }
 }
 
-// Booking Queue Management
-class BookingQueue {
-    private Queue<Reservation> queue;
+// Booking History class
+class BookingHistory {
+    private List<Booking> bookings;
 
-    public BookingQueue() {
-        queue = new LinkedList<>();
+    public BookingHistory() {
+        bookings = new ArrayList<>();
     }
 
-    // Add booking request
-    public void addRequest(Reservation reservation) {
-        queue.add(reservation);
-        System.out.println("✅ Booking request added for " + reservation.getCustomerName());
+    public void addBooking(Booking booking) {
+        bookings.add(booking);
     }
 
-    // Process booking (FIFO)
-    public void processBooking(Map<String, Integer> inventory) {
-        if (queue.isEmpty()) {
-            System.out.println("❌ No booking requests!");
-            return;
-        }
+    public List<Booking> getAllBookings() {
+        return bookings;
+    }
 
-        Reservation r = queue.poll(); // FIFO
-
-        String roomType = r.getRoomType();
-
-        if (inventory.containsKey(roomType) && inventory.get(roomType) > 0) {
-            inventory.put(roomType, inventory.get(roomType) - 1);
-            System.out.println("🎉 Booking confirmed for " + r.getCustomerName() +
-                    " (" + roomType + ")");
-        } else {
-            System.out.println("❌ Booking failed for " + r.getCustomerName() +
-                    " (No " + roomType + " available)");
+    public void displayAllBookings() {
+        System.out.println("\n--- Booking History ---");
+        for (Booking b : bookings) {
+            b.display();
         }
     }
+}
 
-    // Display pending requests
-    public void showQueue() {
-        System.out.println("\n==== Pending Booking Requests ====");
-        for (Reservation r : queue) {
-            System.out.println(r.getCustomerName() + " → " + r.getRoomType());
+// Report Service class
+class BookingReportService {
+
+    public void generateTotalRevenue(List<Booking> bookings) {
+        double total = 0;
+        for (Booking b : bookings) {
+            total += b.getAmount();
+        }
+        System.out.println("Total Revenue: ₹" + total);
+    }
+
+    public void generateBookingCount(List<Booking> bookings) {
+        System.out.println("Total Bookings: " + bookings.size());
+    }
+
+    public void generateRoomTypeReport(List<Booking> bookings) {
+        Map<String, Integer> roomCount = new HashMap<>();
+
+        for (Booking b : bookings) {
+            roomCount.put(b.getRoomType(),
+                    roomCount.getOrDefault(b.getRoomType(), 0) + 1);
+        }
+
+        System.out.println("\nRoom Type Report:");
+        for (String room : roomCount.keySet()) {
+            System.out.println(room + " : " + roomCount.get(room));
         }
     }
 }
 
 // Main class
-public class BookMyStayAppUC5 {
-
+public class Main {
     public static void main(String[] args) {
 
-        // Step 1: Inventory (from UC3)
-        Map<String, Integer> inventory = new HashMap<>();
-        inventory.put("Single Room", 2);
-        inventory.put("Double Room", 1);
+        BookingHistory history = new BookingHistory();
 
-        // Step 2: Booking Queue
-        BookingQueue bookingQueue = new BookingQueue();
+        // Add bookings
+        history.addBooking(new Booking(1, "Thanveer", "Deluxe", 3000));
+        history.addBooking(new Booking(2, "Ali", "Standard", 2000));
+        history.addBooking(new Booking(3, "Rahul", "Deluxe", 3500));
+        history.addBooking(new Booking(4, "John", "Suite", 5000));
 
-        // Step 3: Add booking requests (FCFS order)
-        bookingQueue.addRequest(new Reservation("Alice", "Single Room"));
-        bookingQueue.addRequest(new Reservation("Bob", "Single Room"));
-        bookingQueue.addRequest(new Reservation("Charlie", "Single Room"));
-        bookingQueue.addRequest(new Reservation("David", "Double Room"));
+        // Display history
+        history.displayAllBookings();
 
-        // Show queue
-        bookingQueue.showQueue();
+        // Generate reports
+        BookingReportService report = new BookingReportService();
 
-        // Step 4: Process bookings one by one (FIFO)
-        System.out.println("\n==== Processing Bookings ====\n");
-
-        bookingQueue.processBooking(inventory);
-        bookingQueue.processBooking(inventory);
-        bookingQueue.processBooking(inventory);
-        bookingQueue.processBooking(inventory);
-
-        // Final inventory
-        System.out.println("\n==== Final Inventory ====");
-        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
-            System.out.println(entry.getKey() + " → " + entry.getValue());
-        }
+        System.out.println("\n--- Reports ---");
+        report.generateTotalRevenue(history.getAllBookings());
+        report.generateBookingCount(history.getAllBookings());
+        report.generateRoomTypeReport(history.getAllBookings());
     }
 }
