@@ -1,93 +1,83 @@
 import java.util.*;
 
+// Custom Exception for Invalid Booking
+class InvalidBookingException extends Exception {
+    public InvalidBookingException(String message) {
+        super(message);
+    }
+}
+
 // Booking class
 class Booking {
     private int bookingId;
     private String guestName;
-    private String roomType;
-    private double amount;
+    private int nights;
+    private double pricePerNight;
 
-    public Booking(int bookingId, String guestName, String roomType, double amount) {
+    public Booking(int bookingId, String guestName, int nights, double pricePerNight) {
         this.bookingId = bookingId;
         this.guestName = guestName;
-        this.roomType = roomType;
-        this.amount = amount;
+        this.nights = nights;
+        this.pricePerNight = pricePerNight;
     }
 
-    public int getBookingId() {
-        return bookingId;
-    }
-
-    public String getGuestName() {
-        return guestName;
-    }
-
-    public String getRoomType() {
-        return roomType;
-    }
-
-    public double getAmount() {
-        return amount;
+    public double calculateTotal() {
+        return nights * pricePerNight;
     }
 
     public void display() {
-        System.out.println("ID: " + bookingId +
+        System.out.println("Booking ID: " + bookingId +
                 ", Guest: " + guestName +
-                ", Room: " + roomType +
-                ", Amount: ₹" + amount);
+                ", Nights: " + nights +
+                ", Total: ₹" + calculateTotal());
     }
 }
 
-// Booking History class
-class BookingHistory {
-    private List<Booking> bookings;
+// Validator class
+class BookingValidator {
 
-    public BookingHistory() {
-        bookings = new ArrayList<>();
+    public static void validate(String guestName, int nights, double price) throws InvalidBookingException {
+
+        if (guestName == null || guestName.trim().isEmpty()) {
+            throw new InvalidBookingException("Guest name cannot be empty.");
+        }
+
+        if (nights <= 0) {
+            throw new InvalidBookingException("Number of nights must be greater than 0.");
+        }
+
+        if (price <= 0) {
+            throw new InvalidBookingException("Price must be positive.");
+        }
+    }
+}
+
+// Booking Service
+class BookingService {
+
+    private List<Booking> bookings = new ArrayList<>();
+
+    public void createBooking(int id, String name, int nights, double price) {
+        try {
+            // Validate input
+            BookingValidator.validate(name, nights, price);
+
+            // Create booking if valid
+            Booking booking = new Booking(id, name, nights, price);
+            bookings.add(booking);
+
+            System.out.println("Booking successful!");
+            booking.display();
+
+        } catch (InvalidBookingException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
-    public void addBooking(Booking booking) {
-        bookings.add(booking);
-    }
-
-    public List<Booking> getAllBookings() {
-        return bookings;
-    }
-
-    public void displayAllBookings() {
-        System.out.println("\n--- Booking History ---");
+    public void showAllBookings() {
+        System.out.println("\n--- Valid Bookings ---");
         for (Booking b : bookings) {
             b.display();
-        }
-    }
-}
-
-// Report Service class
-class BookingReportService {
-
-    public void generateTotalRevenue(List<Booking> bookings) {
-        double total = 0;
-        for (Booking b : bookings) {
-            total += b.getAmount();
-        }
-        System.out.println("Total Revenue: ₹" + total);
-    }
-
-    public void generateBookingCount(List<Booking> bookings) {
-        System.out.println("Total Bookings: " + bookings.size());
-    }
-
-    public void generateRoomTypeReport(List<Booking> bookings) {
-        Map<String, Integer> roomCount = new HashMap<>();
-
-        for (Booking b : bookings) {
-            roomCount.put(b.getRoomType(),
-                    roomCount.getOrDefault(b.getRoomType(), 0) + 1);
-        }
-
-        System.out.println("\nRoom Type Report:");
-        for (String room : roomCount.keySet()) {
-            System.out.println(room + " : " + roomCount.get(room));
         }
     }
 }
@@ -96,23 +86,17 @@ class BookingReportService {
 public class Main {
     public static void main(String[] args) {
 
-        BookingHistory history = new BookingHistory();
+        BookingService service = new BookingService();
 
-        // Add bookings
-        history.addBooking(new Booking(1, "Thanveer", "Deluxe", 3000));
-        history.addBooking(new Booking(2, "Ali", "Standard", 2000));
-        history.addBooking(new Booking(3, "Rahul", "Deluxe", 3500));
-        history.addBooking(new Booking(4, "John", "Suite", 5000));
+        // Valid booking
+        service.createBooking(1, "Thanveer", 3, 2000);
 
-        // Display history
-        history.displayAllBookings();
+        // Invalid cases
+        service.createBooking(2, "", 2, 1500);        // invalid name
+        service.createBooking(3, "Ali", 0, 1500);     // invalid nights
+        service.createBooking(4, "Rahul", 2, -500);   // invalid price
 
-        // Generate reports
-        BookingReportService report = new BookingReportService();
-
-        System.out.println("\n--- Reports ---");
-        report.generateTotalRevenue(history.getAllBookings());
-        report.generateBookingCount(history.getAllBookings());
-        report.generateRoomTypeReport(history.getAllBookings());
+        // Display valid bookings
+        service.showAllBookings();
     }
 }
