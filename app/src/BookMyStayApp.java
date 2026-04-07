@@ -1,102 +1,92 @@
 import java.util.*;
 
-// Custom Exception for Invalid Booking
-class InvalidBookingException extends Exception {
-    public InvalidBookingException(String message) {
-        super(message);
+// Room Inventory Class
+class RoomInventory {
+    private Map<String, Integer> rooms = new HashMap<>();
+
+    public RoomInventory() {
+        rooms.put("Standard", 5);
+        rooms.put("Deluxe", 3);
+        rooms.put("Suite", 2);
+    }
+
+    public boolean bookRoom(String type) {
+        if (rooms.getOrDefault(type, 0) > 0) {
+            rooms.put(type, rooms.get(type) - 1);
+            return true;
+        }
+        return false;
+    }
+
+    public void rollbackRoom(String type) {
+        rooms.put(type, rooms.getOrDefault(type, 0) + 1);
+    }
+
+    public void displayInventory() {
+        System.out.println("\n--- Room Inventory ---");
+        for (String type : rooms.keySet()) {
+            System.out.println(type + " : " + rooms.get(type));
+        }
     }
 }
 
-// Booking class
+// Booking Class
 class Booking {
-    private int bookingId;
-    private String guestName;
-    private int nights;
-    private double pricePerNight;
+    int id;
+    String guestName;
+    String roomType;
+    boolean isActive;
 
-    public Booking(int bookingId, String guestName, int nights, double pricePerNight) {
-        this.bookingId = bookingId;
+    public Booking(int id, String guestName, String roomType) {
+        this.id = id;
         this.guestName = guestName;
-        this.nights = nights;
-        this.pricePerNight = pricePerNight;
-    }
-
-    public double calculateTotal() {
-        return nights * pricePerNight;
-    }
-
-    public void display() {
-        System.out.println("Booking ID: " + bookingId +
-                ", Guest: " + guestName +
-                ", Nights: " + nights +
-                ", Total: ₹" + calculateTotal());
+        this.roomType = roomType;
+        this.isActive = true;
     }
 }
 
-// Validator class
-class BookingValidator {
+// Cancellation Service
+class CancellationService {
 
-    public static void validate(String guestName, int nights, double price) throws InvalidBookingException {
-
-        if (guestName == null || guestName.trim().isEmpty()) {
-            throw new InvalidBookingException("Guest name cannot be empty.");
+    public void cancelBooking(Booking booking, RoomInventory inventory) {
+        if (booking == null || !booking.isActive) {
+            System.out.println("Invalid or already cancelled booking.");
+            return;
         }
 
-        if (nights <= 0) {
-            throw new InvalidBookingException("Number of nights must be greater than 0.");
-        }
+        // Rollback inventory
+        inventory.rollbackRoom(booking.roomType);
 
-        if (price <= 0) {
-            throw new InvalidBookingException("Price must be positive.");
-        }
+        // Update booking status
+        booking.isActive = false;
+
+        System.out.println("Booking ID " + booking.id + " cancelled successfully.");
     }
 }
 
-// Booking Service
-class BookingService {
-
-    private List<Booking> bookings = new ArrayList<>();
-
-    public void createBooking(int id, String name, int nights, double price) {
-        try {
-            // Validate input
-            BookingValidator.validate(name, nights, price);
-
-            // Create booking if valid
-            Booking booking = new Booking(id, name, nights, price);
-            bookings.add(booking);
-
-            System.out.println("Booking successful!");
-            booking.display();
-
-        } catch (InvalidBookingException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
-
-    public void showAllBookings() {
-        System.out.println("\n--- Valid Bookings ---");
-        for (Booking b : bookings) {
-            b.display();
-        }
-    }
-}
-
-// Main class
+// Main Class
 public class Main {
     public static void main(String[] args) {
 
-        BookingService service = new BookingService();
+        RoomInventory inventory = new RoomInventory();
+        List<Booking> bookings = new ArrayList<>();
 
-        // Valid booking
-        service.createBooking(1, "Thanveer", 3, 2000);
+        // Create bookings
+        if (inventory.bookRoom("Deluxe")) {
+            bookings.add(new Booking(1, "Thanveer", "Deluxe"));
+        }
 
-        // Invalid cases
-        service.createBooking(2, "", 2, 1500);        // invalid name
-        service.createBooking(3, "Ali", 0, 1500);     // invalid nights
-        service.createBooking(4, "Rahul", 2, -500);   // invalid price
+        if (inventory.bookRoom("Suite")) {
+            bookings.add(new Booking(2, "Ali", "Suite"));
+        }
 
-        // Display valid bookings
-        service.showAllBookings();
+        inventory.displayInventory();
+
+        // Cancel booking
+        CancellationService cancelService = new CancellationService();
+        cancelService.cancelBooking(bookings.get(0), inventory);
+
+        // After rollback
+        inventory.displayInventory();
     }
 }
