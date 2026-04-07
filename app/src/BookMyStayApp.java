@@ -1,57 +1,98 @@
-class Hotel {
-    private int availableRooms;
+import java.io.*;
+import java.util.*;
 
-    public Hotel(int rooms) {
-        this.availableRooms = rooms;
-    }
+// Serializable class
+class Booking implements Serializable {
+    String guestName;
+    int rooms;
 
-    // synchronized method to ensure thread safety
-    public synchronized void bookRoom(String guestName, int roomsRequested) {
-        System.out.println(guestName + " is trying to book " + roomsRequested + " room(s)...");
-
-        if (roomsRequested <= availableRooms) {
-            System.out.println("Booking successful for " + guestName);
-            availableRooms -= roomsRequested;
-            System.out.println("Rooms left: " + availableRooms);
-        } else {
-            System.out.println("Booking failed for " + guestName + " (Not enough rooms)");
-        }
-
-        System.out.println("-----------------------------------");
-    }
-}
-
-// Thread class
-class BookingThread extends Thread {
-    private Hotel hotel;
-    private String guestName;
-    private int rooms;
-
-    public BookingThread(Hotel hotel, String guestName, int rooms) {
-        this.hotel = hotel;
+    public Booking(String guestName, int rooms) {
         this.guestName = guestName;
         this.rooms = rooms;
     }
 
-    public void run() {
-        hotel.bookRoom(guestName, rooms);
+    public String toString() {
+        return guestName + " booked " + rooms + " room(s)";
     }
 }
 
-// Main class
+// Persistence Service
+class PersistenceService {
+
+    private static final String FILE_NAME = "bookings.dat";
+
+    // Save data
+    public static void saveData(List<Booking> bookings) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            oos.writeObject(bookings);
+            System.out.println("Data saved successfully!");
+        } catch (IOException e) {
+            System.out.println("Error saving data.");
+        }
+    }
+
+    // Load data
+    public static List<Booking> loadData() {
+        List<Booking> bookings = new ArrayList<>();
+
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            bookings = (List<Booking>) ois.readObject();
+            System.out.println("Data loaded successfully!");
+        } catch (Exception e) {
+            System.out.println("No previous data found. Starting fresh.");
+        }
+
+        return bookings;
+    }
+}
+
+// Main System
 public class Main {
+
     public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
 
-        Hotel hotel = new Hotel(5); // Total rooms = 5
+        // Load previous data
+        List<Booking> bookings = PersistenceService.loadData();
 
-        // Multiple users (threads)
-        BookingThread t1 = new BookingThread(hotel, "Guest A", 2);
-        BookingThread t2 = new BookingThread(hotel, "Guest B", 3);
-        BookingThread t3 = new BookingThread(hotel, "Guest C", 2);
+        while (true) {
+            System.out.println("\n--- Book My Stay ---");
+            System.out.println("1. Add Booking");
+            System.out.println("2. View Bookings");
+            System.out.println("3. Exit");
+            System.out.print("Enter choice: ");
 
-        // Start threads
-        t1.start();
-        t2.start();
-        t3.start();
+            int choice = sc.nextInt();
+            sc.nextLine(); // consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter guest name: ");
+                    String name = sc.nextLine();
+
+                    System.out.print("Enter number of rooms: ");
+                    int rooms = sc.nextInt();
+
+                    bookings.add(new Booking(name, rooms));
+                    System.out.println("Booking added!");
+                    break;
+
+                case 2:
+                    System.out.println("\nAll Bookings:");
+                    for (Booking b : bookings) {
+                        System.out.println(b);
+                    }
+                    break;
+
+                case 3:
+                    // Save before exit
+                    PersistenceService.saveData(bookings);
+                    System.out.println("Exiting... Data saved!");
+                    System.exit(0);
+
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
     }
 }
