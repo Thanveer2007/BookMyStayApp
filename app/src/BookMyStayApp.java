@@ -1,96 +1,108 @@
 import java.util.*;
 
+// Add-On Service class
+class AddOnService {
+    private String serviceName;
+    private double price;
+
+    public AddOnService(String serviceName, double price) {
+        this.serviceName = serviceName;
+        this.price = price;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+}
+
 // Reservation class
 class Reservation {
-    private String customerName;
-    private String roomType;
+    private int reservationId;
+    private String guestName;
+    private List<AddOnService> services;
 
-    public Reservation(String customerName, String roomType) {
-        this.customerName = customerName;
-        this.roomType = roomType;
+    public Reservation(int reservationId, String guestName) {
+        this.reservationId = reservationId;
+        this.guestName = guestName;
+        this.services = new ArrayList<>();
     }
 
-    public String getCustomerName() {
-        return customerName;
+    public int getReservationId() {
+        return reservationId;
     }
 
-    public String getRoomType() {
-        return roomType;
-    }
-}
-
-// Booking Service (Actor)
-class BookingService {
-
-    private Queue<Reservation> bookingQueue;
-    private Map<String, Integer> inventory;
-
-    public BookingService(Map<String, Integer> inventory) {
-        this.inventory = inventory;
-        this.bookingQueue = new LinkedList<>();
+    public void addService(AddOnService service) {
+        services.add(service);
     }
 
-    // Add booking request
-    public void addRequest(Reservation r) {
-        bookingQueue.add(r);
-        System.out.println("📩 Request added: " + r.getCustomerName());
+    public void removeService(String serviceName) {
+        services.removeIf(s -> s.getServiceName().equalsIgnoreCase(serviceName));
     }
 
-    // Process all bookings safely
-    public void processBookings() {
-        System.out.println("\n==== Processing Bookings ====\n");
-
-        while (!bookingQueue.isEmpty()) {
-            Reservation r = bookingQueue.poll(); // FIFO
-            String roomType = r.getRoomType();
-
-            if (inventory.containsKey(roomType) && inventory.get(roomType) > 0) {
-                // Allocate room safely
-                inventory.put(roomType, inventory.get(roomType) - 1);
-
-                System.out.println("✅ Booking CONFIRMED for "
-                        + r.getCustomerName()
-                        + " → " + roomType);
-            } else {
-                System.out.println("❌ Booking FAILED for "
-                        + r.getCustomerName()
-                        + " → " + roomType + " (Not Available)");
-            }
+    public double calculateTotalCost() {
+        double total = 0;
+        for (AddOnService s : services) {
+            total += s.getPrice();
         }
+        return total;
     }
 
-    // Show remaining inventory
-    public void showInventory() {
-        System.out.println("\n==== Remaining Inventory ====");
-        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
-            System.out.println(entry.getKey() + " → " + entry.getValue());
+    public void displayServices() {
+        System.out.println("Add-On Services for " + guestName + ":");
+        for (AddOnService s : services) {
+            System.out.println("- " + s.getServiceName() + " : ₹" + s.getPrice());
         }
     }
 }
 
-// Main class
-public class BookMyStayAppUC6 {
+// Add-On Service Manager
+class AddOnServiceManager {
 
+    public void addServiceToReservation(Reservation reservation, AddOnService service) {
+        reservation.addService(service);
+        System.out.println(service.getServiceName() + " added successfully.");
+    }
+
+    public void removeServiceFromReservation(Reservation reservation, String serviceName) {
+        reservation.removeService(serviceName);
+        System.out.println(serviceName + " removed successfully.");
+    }
+}
+
+// Main Class
+public class Main {
     public static void main(String[] args) {
 
-        // Step 1: Initialize inventory (Centralized)
-        Map<String, Integer> inventory = new HashMap<>();
-        inventory.put("Single Room", 2);
-        inventory.put("Double Room", 1);
+        // Create reservation
+        Reservation reservation = new Reservation(101, "Thanveer");
 
-        // Step 2: Booking Service
-        BookingService service = new BookingService(inventory);
+        // Create services
+        AddOnService breakfast = new AddOnService("Breakfast", 250);
+        AddOnService spa = new AddOnService("Spa", 1000);
+        AddOnService pickup = new AddOnService("Airport Pickup", 800);
 
-        // Step 3: Add booking requests (Queue)
-        service.addRequest(new Reservation("Alice", "Single Room"));
-        service.addRequest(new Reservation("Bob", "Single Room"));
-        service.addRequest(new Reservation("Charlie", "Single Room"));
-        service.addRequest(new Reservation("David", "Double Room"));
+        // Manager
+        AddOnServiceManager manager = new AddOnServiceManager();
 
-        // Step 4: Process all bookings safely
-        service.processBookings();
+        // Add services
+        manager.addServiceToReservation(reservation, breakfast);
+        manager.addServiceToReservation(reservation, spa);
+        manager.addServiceToReservation(reservation, pickup);
 
-        // Step 5: Show final inventory
-        service.showInventory();
+        // Display
+        reservation.displayServices();
+
+        // Remove one service
+        manager.removeServiceFromReservation(reservation, "Spa");
+
+        // Display again
+        reservation.displayServices();
+
+        // Total cost
+        System.out.println("Total Add-On Cost: ₹" + reservation.calculateTotalCost());
     }
 }
