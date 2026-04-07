@@ -1,92 +1,57 @@
-import java.util.*;
+class Hotel {
+    private int availableRooms;
 
-// Room Inventory Class
-class RoomInventory {
-    private Map<String, Integer> rooms = new HashMap<>();
-
-    public RoomInventory() {
-        rooms.put("Standard", 5);
-        rooms.put("Deluxe", 3);
-        rooms.put("Suite", 2);
+    public Hotel(int rooms) {
+        this.availableRooms = rooms;
     }
 
-    public boolean bookRoom(String type) {
-        if (rooms.getOrDefault(type, 0) > 0) {
-            rooms.put(type, rooms.get(type) - 1);
-            return true;
+    // synchronized method to ensure thread safety
+    public synchronized void bookRoom(String guestName, int roomsRequested) {
+        System.out.println(guestName + " is trying to book " + roomsRequested + " room(s)...");
+
+        if (roomsRequested <= availableRooms) {
+            System.out.println("Booking successful for " + guestName);
+            availableRooms -= roomsRequested;
+            System.out.println("Rooms left: " + availableRooms);
+        } else {
+            System.out.println("Booking failed for " + guestName + " (Not enough rooms)");
         }
-        return false;
-    }
 
-    public void rollbackRoom(String type) {
-        rooms.put(type, rooms.getOrDefault(type, 0) + 1);
-    }
-
-    public void displayInventory() {
-        System.out.println("\n--- Room Inventory ---");
-        for (String type : rooms.keySet()) {
-            System.out.println(type + " : " + rooms.get(type));
-        }
+        System.out.println("-----------------------------------");
     }
 }
 
-// Booking Class
-class Booking {
-    int id;
-    String guestName;
-    String roomType;
-    boolean isActive;
+// Thread class
+class BookingThread extends Thread {
+    private Hotel hotel;
+    private String guestName;
+    private int rooms;
 
-    public Booking(int id, String guestName, String roomType) {
-        this.id = id;
+    public BookingThread(Hotel hotel, String guestName, int rooms) {
+        this.hotel = hotel;
         this.guestName = guestName;
-        this.roomType = roomType;
-        this.isActive = true;
+        this.rooms = rooms;
+    }
+
+    public void run() {
+        hotel.bookRoom(guestName, rooms);
     }
 }
 
-// Cancellation Service
-class CancellationService {
-
-    public void cancelBooking(Booking booking, RoomInventory inventory) {
-        if (booking == null || !booking.isActive) {
-            System.out.println("Invalid or already cancelled booking.");
-            return;
-        }
-
-        // Rollback inventory
-        inventory.rollbackRoom(booking.roomType);
-
-        // Update booking status
-        booking.isActive = false;
-
-        System.out.println("Booking ID " + booking.id + " cancelled successfully.");
-    }
-}
-
-// Main Class
+// Main class
 public class Main {
     public static void main(String[] args) {
 
-        RoomInventory inventory = new RoomInventory();
-        List<Booking> bookings = new ArrayList<>();
+        Hotel hotel = new Hotel(5); // Total rooms = 5
 
-        // Create bookings
-        if (inventory.bookRoom("Deluxe")) {
-            bookings.add(new Booking(1, "Thanveer", "Deluxe"));
-        }
+        // Multiple users (threads)
+        BookingThread t1 = new BookingThread(hotel, "Guest A", 2);
+        BookingThread t2 = new BookingThread(hotel, "Guest B", 3);
+        BookingThread t3 = new BookingThread(hotel, "Guest C", 2);
 
-        if (inventory.bookRoom("Suite")) {
-            bookings.add(new Booking(2, "Ali", "Suite"));
-        }
-
-        inventory.displayInventory();
-
-        // Cancel booking
-        CancellationService cancelService = new CancellationService();
-        cancelService.cancelBooking(bookings.get(0), inventory);
-
-        // After rollback
-        inventory.displayInventory();
+        // Start threads
+        t1.start();
+        t2.start();
+        t3.start();
     }
 }
